@@ -1,30 +1,38 @@
-int lightSensor  = A0;  // select the input pin for the potentiometer
-int lampControl  = 13;  // select the pin for the LED
-int triggerValue = 0;   // variable to store the value coming from the sensor
-int lightValue   = 0;   // variable to store the value coming from the sensor
+int lampTriggerPin   = 13;    // use pin 13 as the control trigger
+int lampIndicator    = 12;
+int lightSensorPin   = A0;    // read light sensor on pin A0
+int lightSensorValue = 0;     // define the input value as an integer
+int waitTime         = 1000;   // wait 500ms and sample again
+
+float nightValue        = 10.0;  // calibration -- more than darkroom with just the growlamp
+float cloudyValue       = 80.0;  // calibration -- more than darkroom with just room lights on
+float percentBrightness = 0.0;
+
 
 void setup() {
-  // declare the ledPin as an OUTPUT:
-  pinMode(lampControl, OUTPUT);  
+  pinMode(lampTriggerPin, OUTPUT);
+  pinMode(lampIndicator, OUTPUT);
   Serial.begin(9600);
 }
 
 void loop() {
-  // read the value from the sensor:
-  lightValue = analogRead(lightSensor);  
-    
-  // print sensor value to screen
-  Serial.print("light sensor: ");  
-  Serial.println(lightValue);  
-  
-  // turn on lapm trigger (if difference too high)
-  if (lightValue < triggerValue) {
-    digitalWrite(lampControl, HIGH);  // turn on if value is too high
-    Serial.println("LAMP ON");
+  lightSensorValue = analogRead(lightSensorPin);  // read light sensor 0-1023
+  percentBrightness = lightSensorValue / 1023.0 * 100.0;  // calculate percent light
+  Serial.print("Light Sensor percent of direct sunlight: ");
+  Serial.print( percentBrightness );
+  Serial.print(" % -- ");
+  if ( percentBrightness < nightValue ) {
+    digitalWrite(lampTriggerPin, HIGH);    
+    digitalWrite(lampIndicator, LOW);       // turn off grow lamp if its night dark
+    Serial.println("LAMP OFF - it night");
+  } else if ( percentBrightness > cloudyValue ) {
+    digitalWrite(lampTriggerPin, HIGH); 
+    digitalWrite(lampIndicator, LOW);       // turn off grow lamp if room is bright
+    Serial.println("LAMP OFF -- bright sunny day");    
   } else {
-    digitalWrite(lampControl, LOW);   // tiurn off when value is ok
-    Serial.println("LAMP OFF");
+    digitalWrite(lampTriggerPin, LOW);
+    digitalWrite(lampIndicator, HIGH);      // turn on grow lamp if room has diffuse daylight
+    Serial.println("LAMP ON -- diffuse daylight");    
   }
-
-  delay(1000);     // read sensor every second (100 milliseconds)            
+  delay(waitTime);
 }
